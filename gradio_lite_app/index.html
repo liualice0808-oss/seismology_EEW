@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>次世代地震測報：AI 代理群與預警知識庫</title>
+<meta name="description" content="中央氣象署 (CWA) 地震監測現況與未來發展、大型地震模型 (LEM) 以及多代理協作系統 (Agent Matrix) 互動式技術簡報與檢索平台。">
+<meta name="keywords" content="中央氣象署, CWA, 地震預警, EEW, AI 代理群, Agent Matrix, 大型地震模型, LEM">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--primary:#00796b;--primary-dark:#004d40;--primary-light:#e0f2f1;--accent:#00897b;--text:#37474f;--text-light:#78909c;--bg:#f5f7f8;--card-bg:#fff;--border:#e0e0e0;--shadow:0 2px 8px rgba(0,0,0,0.06);--radius:10px;--font:'Inter','Noto Sans TC',system-ui,-apple-system,sans-serif}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh}
+.loader{position:fixed;inset:0;background:#fff;display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:9999;transition:opacity .5s}
+.loader.hide{opacity:0;pointer-events:none}
+.spinner{width:48px;height:48px;border:4px solid var(--primary-light);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader h2{color:var(--primary-dark);font-weight:600;font-size:1.2em}
+.loader p{color:var(--text-light);font-size:.85em;margin-top:4px}
+.app{max-width:1100px;margin:0 auto;padding:16px;display:none}
+.app.show{display:block}
+.header{background:linear-gradient(135deg,var(--primary)0%,var(--primary-dark)100%);color:#fff;padding:28px 24px;border-radius:var(--radius);margin-bottom:20px;box-shadow:0 4px 16px rgba(0,0,0,.12)}
+.header h1{font-size:1.6em;font-weight:700;margin-bottom:6px;letter-spacing:-.3px}
+.header p{font-size:.95em;opacity:.88}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px}
+.stat-card{background:var(--card-bg);border-radius:8px;padding:16px;text-align:center;border:1px solid var(--border);box-shadow:var(--shadow)}
+.stat-num{font-size:1.5em;font-weight:700;color:var(--primary);display:block}
+.stat-label{font-size:.82em;color:var(--text-light)}
+.tabs{display:flex;gap:4px;background:var(--card-bg);border-radius:var(--radius);padding:6px;margin-bottom:20px;border:1px solid var(--border);overflow-x:auto;flex-wrap:nowrap}
+.tab-btn{flex-shrink:0;padding:10px 18px;border:none;background:transparent;border-radius:6px;cursor:pointer;font-size:.9em;font-weight:500;color:var(--text-light);transition:all .2s;font-family:var(--font);white-space:nowrap}
+.tab-btn:hover{background:var(--primary-light);color:var(--primary)}
+.tab-btn.active{background:var(--primary);color:#fff;box-shadow:0 2px 8px rgba(0,121,107,.3)}
+.tab-content{display:none}
+.tab-content.active{display:block}
+.card{background:var(--card-bg);border-radius:var(--radius);border:1px solid var(--border);padding:20px;margin-bottom:16px;box-shadow:var(--shadow)}
+.card h3{color:var(--primary);margin-bottom:12px;font-size:1.1em}
+.card p{color:#455a64;text-align:justify;font-size:.92em;line-height:1.7}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:768px){.grid-2{grid-template-columns:1fr}}
+.search-bar{display:flex;gap:8px;margin-bottom:12px}
+.search-bar input{flex:1;padding:10px 14px;border:1px solid var(--border);border-radius:6px;font-size:.9em;font-family:var(--font);outline:none;transition:border .2s}
+.search-bar input:focus{border-color:var(--primary)}
+.search-bar button{padding:10px 20px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-size:.9em;font-family:var(--font);transition:background .2s}
+.search-bar button:hover{background:var(--primary-dark)}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.tag{padding:4px 14px;background:var(--primary-light);color:var(--primary);border:1px solid #b2dfdb;border-radius:16px;font-size:.82em;cursor:pointer;transition:all .2s;font-family:var(--font)}
+.tag:hover{background:var(--primary);color:#fff}
+.result-item{border-left:4px solid var(--accent);padding:14px;margin-bottom:10px;border-radius:0 6px 6px 0;background:var(--card-bg);border:1px solid var(--border);border-left-width:4px}
+.result-item .title{font-weight:600;color:var(--text);font-size:.9em;margin-bottom:4px}
+.result-item .page{font-size:.8em;color:var(--text-light)}
+.result-item .content{font-size:.88em;color:#455a64;margin-top:6px;line-height:1.6}
+.result-item .content mark{background:linear-gradient(120deg,#fff59d,#fff176);padding:1px 4px;border-radius:3px;font-weight:600;color:#3e2723}
+.result-item .notes{background:#fafafa;border-top:1px dashed #e0e0e0;padding:8px;margin-top:6px;border-radius:4px;font-size:.84em;color:#5d4037}
+.result-item .imgs{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.result-item .imgs img{height:50px;border-radius:4px;border:1px solid #cfd8dc;cursor:pointer;transition:transform .15s}
+.result-item .imgs img:hover{transform:scale(1.5);z-index:10}
+.slide-nav{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.slide-nav select,.slide-nav input{padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:.9em;font-family:var(--font);outline:none}
+.slide-nav select{flex:1;min-width:180px}
+.slide-nav input{width:70px;text-align:center}
+.slide-nav button{padding:8px 16px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:500;font-family:var(--font);transition:background .2s;font-size:.85em}
+.slide-nav button:hover{background:var(--primary-dark)}
+.slide-nav .page-info{font-size:.85em;color:var(--text-light)}
+.slide-display{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:768px){.slide-display{grid-template-columns:1fr}}
+.slide-text{background:var(--card-bg);border-radius:var(--radius);border:1px solid var(--border);padding:16px;max-height:500px;overflow-y:auto}
+.slide-text h4{color:var(--primary);margin-bottom:8px;font-size:.95em}
+.slide-text p{font-size:.9em;color:#455a64;line-height:1.7;white-space:pre-wrap}
+.slide-text .notes-area{background:#fafafa;border-top:1px dashed #e0e0e0;padding:12px;margin-top:12px;border-radius:6px}
+.slide-text .notes-area h5{color:#795548;font-size:.9em;margin-bottom:4px}
+.slide-notes{background:var(--card-bg);border-radius:var(--radius);border:1px solid var(--border);padding:16px;max-height:500px;overflow-y:auto}
+.slide-notes h4{color:#5d4037;margin-bottom:8px;font-size:.95em}
+.slide-notes p{font-size:.88em;color:#5d4037;line-height:1.6;white-space:pre-wrap}
+.slide-images{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.slide-images img{max-width:100%;border-radius:6px;border:1px solid #cfd8dc;box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.case-card{border-top:5px solid #455a64;padding:20px;background:var(--card-bg);border-radius:var(--radius);border:1px solid var(--border)}
+.case-card h3{color:var(--text);font-size:1.2em;border-bottom:1px solid #eceff1;padding-bottom:10px;margin-bottom:14px}
+.case-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+@media(max-width:640px){.case-grid{grid-template-columns:1fr}}
+.case-field{background:#f8f9fa;padding:8px 12px;border-radius:6px;border:1px solid #f0f0f0}
+.case-field span{color:var(--text-light);font-size:.8em;display:block}
+.case-field strong{color:#263238;font-size:1em}
+.case-warn{background:#ffebee;color:#c62828;padding:8px 12px;border-radius:6px;font-weight:600;font-size:.9em;border:1px solid #ffcdd2;margin-bottom:12px;display:block}
+.case-zone{background:#fff3e0;color:#ef6c00;padding:8px 12px;border-radius:6px;font-size:.85em;border:1px solid #ffe0b2;margin-bottom:12px;display:block}
+.case-summary{background:#fafafa;padding:12px;border-radius:6px;border:1px solid #eceff1;font-size:.9em;color:#455a64;line-height:1.6;margin-bottom:12px;text-align:justify}
+.case-rating{background:#eceff1;padding:10px 14px;border-radius:6px;font-size:.85em;color:#546e7a}
+.agent-card{border-top:5px solid var(--accent);padding:20px;background:var(--card-bg);border-radius:var(--radius);border:1px solid var(--border)}
+.agent-card h3{color:var(--primary);font-size:1.2em;margin-bottom:12px}
+.agent-role{font-size:1em;color:var(--text);font-weight:600;border-left:3px solid var(--accent);padding-left:10px;margin-bottom:14px;line-height:1.5}
+.agent-duties{margin-bottom:14px}
+.agent-duties strong{color:var(--primary-dark);display:block;margin-bottom:6px;font-size:.9em}
+.agent-duties ul{padding-left:18px;color:#455a64;font-size:.88em;line-height:1.7}
+.agent-duties li{margin-bottom:4px}
+.agent-cron{background:#efebe9;border-radius:6px;padding:8px 14px;display:flex;justify-content:space-between;align-items:center;font-size:.85em}
+.agent-cron span{color:#5d4037;font-weight:600}
+.agent-cron code{background:#d7ccc8;color:#3e2723;padding:2px 8px;border-radius:4px;font-weight:600;font-size:.9em}
+.empty-state{padding:30px;text-align:center;color:var(--text-light);font-size:.9em}
+.doc-list{display:flex;flex-direction:column;gap:6px;font-size:.9em}
+.doc-item{padding:8px 12px;border-radius:4px;border-left:4px solid var(--accent);background:#f1f8e9}
+.radio-group{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.radio-group label{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--card-bg);border:1px solid var(--border);border-radius:6px;cursor:pointer;transition:all .15s;font-size:.88em}
+.radio-group label:hover,.radio-group input:checked+span{background:var(--primary-light)}
+.radio-group input[type=radio]{accent-color:var(--primary)}
+</style>
+</head>
+<body>
+
+<div class="loader" id="loader">
+    <div class="spinner"></div>
+    <h2>載入次世代地震測報知識庫</h2>
+    <p id="loadStatus">正在載入投影片資料...</p>
+</div>
+
+<div class="app" id="app">
+
+    <div class="header">
+        <h1>次世代地震測報：AI 代理群與預警知識庫</h1>
+        <p>中央氣象署 (CWA) 地震速報演進、大型地震模型與多代理協作系統簡報檢索平台</p>
+    </div>
+
+    <div class="stats" id="stats"></div>
+
+    <div class="tabs" id="tabs">
+        <button class="tab-btn active" data-tab="overview">專案導覽</button>
+        <button class="tab-btn" data-tab="search">知識庫檢索</button>
+        <button class="tab-btn" data-tab="browser">簡報瀏覽器</button>
+        <button class="tab-btn" data-tab="cases">預警案例</button>
+        <button class="tab-btn" data-tab="agents">AI 代理群</button>
+    </div>
+
+    <div class="tab-content active" id="tab-overview"></div>
+    <div class="tab-content" id="tab-search"></div>
+    <div class="tab-content" id="tab-browser"></div>
+    <div class="tab-content" id="tab-cases"></div>
+    <div class="tab-content" id="tab-agents"></div>
+
+</div>
+
+<div id="lightbox" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99999;justify-content:center;align-items:center;cursor:pointer;padding:20px" onclick="this.style.display='none'">
+    <img id="lightboxImg" style="max-width:95%;max-height:95%;border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,.4)">
+</div>
+
+<script>
+const STATE = { slides: [], docTitles: [], currentTab: 'overview', slideIdx: 0 };
+
+const agentsData = {
+    my_agent: {
+        title: '地震預警總管 (EEW Supervisor)',
+        role: '負責系統核心健康檢查、日誌分析與異常事件告警推播。',
+        duties: ['每 30 分鐘執行 Earthworm 容器巡檢與 sniff 狀態檢查 (eew_health cron)。','分析系統日誌，異常時自動擷取最後 50 行推送至通報管道。','維護核心警報觸發規則與每日工作日報總結 (eew_report_daily)。','分派任務給協同代理，並進行結果彙編。'],
+        cron: '*/30 * * * * (eew_health)', icon: '🛡️'
+    },
+    secondary_agent: {
+        title: '系統整合工程師 (System Integrator)',
+        role: '負責本地主機端工作流程編排、故障自動修復與訊息中轉。',
+        duties: ['負責 host-side 自動化腳本維護 (例如 eew_fault_recovery.sh)。','管理系統 Cron 工作排程與多代理之間的訊息路由 (seismic-conductor 模組)。','收集其他代理之每日工作日誌，產出封裝後的 artifacts/ 工作紀錄。','在 Hermes 鏈路中進行訊息路由與代理間的協作派發。'],
+        cron: '08:30 (每日報告封裝與發送)', icon: '⚙️'
+    },
+    seismo_agent: {
+        title: '地震學助教 (Seismology Assistant)',
+        role: '負責將原始地震報告檔案進行結構化分析，並執行數據自動化繪圖。',
+        duties: ['監控 .rep 檔案生成，並自動解析為結構化的 CSV 或 JSON 格式。','計算系統解算延遲、定位誤差與震級誤差，並儲存為數據檔。','自動生成統計圖表，如規模誤差散佈圖、測站延遲序列圖等。','維持 Docker EEW 容器之每日狀態回報。'],
+        cron: '03:00 (RT pipeline 夜間端到端延遲測試)', icon: '📊'
+    },
+    seismo: {
+        title: '地震科學研究員 (Seismic Researcher)',
+        role: '專注於地震物理建模、前兆觀測數據分析與預警閾值科研優化。',
+        duties: ['針對「密集小震群」與「深部無感地震」建立震波衰減與定位修正模型。','進行長期地震活動趨勢分析，為系統警報門檻提供科學調整建議。','追蹤學術數據鏈路，提供 AI 震度預估模型的反饋參數。'],
+        cron: '每週一 09:00 (科研趨勢與模型報告)', icon: '🔬'
+    }
+};
+
+const casesData = {
+    case_20260512: {
+        title: '2026/05/12 東部海域 M5.6 地震', mag: 'M_L 5.6', depth: '18.10 km',
+        epicenter: '臺灣東部海域 (近花蓮)', time: '11:56:45',
+        warn: '第 1 報 10.5 秒 (實際解算 9.7 秒 / 預估 M5.3)',
+        zone: '盲區半徑 33 公里',
+        summary: '創下 5 月份最快解算時效紀錄！僅耗時 9.7 秒即完成定位與規模預估，並於 10.5 秒完成 PWS 警報對外推播至花蓮縣與臺東縣。震度預估與實際觀測誤差在正負 1 級內，準確度高達 95%。',
+        rating: '5月最佳預警案例，展現極佳的近海地震速報反應時間。'
+    },
+    case_20260501: {
+        title: '2026/05/01 東部海域 M6.1 地震', mag: 'M_L 6.1', depth: '38.50 km',
+        epicenter: '臺灣東部海域', time: '12:40:13',
+        warn: '第 1 報 18.0 秒 (預估 M5.0) / 第 2 報 20.5 秒 (預估 M5.6)',
+        zone: '無 (震央位於遠海，本島皆有預警時間)',
+        summary: '因發震位置距離陸地較遠，第一報花費 18.0 秒 (以幾何中心法解算)。PWS 成功發送至宜蘭、基隆、臺北、新北與桃園。測站觸發率統計良好，水平誤差約 9.18 km，規模最終回報極為契合。',
+        rating: '遠海地震，定位與規模估計穩定，提供大台北地區 20-30 秒預警時間。'
+    },
+    case_20250121: {
+        title: '2025/01/21 嘉義大埔 M6.4 地震', mag: 'M_L 6.4', depth: '12.50 km',
+        epicenter: '嘉義大埔鄉', time: '12:15:30',
+        warn: 'PWS 手機警報 8.2 秒 / 學校軟體 9.5 秒',
+        zone: '盲區半徑 28 公里',
+        summary: '採用 2024 年檢討優化後的演算法，在 8.2 秒內成功推播強震即時警報。此次發布完全符合預警盲區縮小之目標，都會區居民在劇烈搖晃到達前獲得 5-10 秒之應變時間。嘉南青年自建廣播警報系統在此次地震中發揮顯著功效。',
+        rating: '演算法優化後首個中大型地震，預警時效與規模估算均十分精準。'
+    },
+    case_20240403: {
+        title: '2024/04/03 花蓮 M7.2 災害地震', mag: 'M_L 7.2', depth: '19.72 km',
+        epicenter: '花蓮壽豐外海', time: '07:58:09',
+        warn: 'PWS 手機警報 9.0 秒 / 電視台蓋台 15.0 秒 / 學術與學校通報 15.0 秒',
+        zone: '盲區半徑 35 公里 (搖晃劇烈但無法提早警報的區域)',
+        summary: '本次地震系統在 9 秒解出並發送 PWS 警報。然而，由於初期規模估計偏低 (預估 M6.8)，導致部分震度達 5 強之縣市 (雙北、桃園等) 未發布國家級警報。氣象署後續檢討，全面精進定位演算法與警報發布閾值。',
+        rating: '時效 9.0s，預估規模低估，引發後續 EEW 大規模優化。'
+    }
+};
+
+function h(t,a,...c){let e=document.createElement(t);if(a)for(let[k,v]of Object.entries(a))e.setAttribute(k,v);for(let ch of c)typeof ch=='string'?e.appendChild(document.createTextNode(ch)):ch instanceof Node?e.appendChild(ch):Array.isArray(ch)&&ch.forEach(x=>typeof x=='string'?e.appendChild(document.createTextNode(x)):x&&e.appendChild(x));return e}
+
+function escapeHtml(s){const d=document.createElement('div');d.appendChild(document.createTextNode(s));return d.innerHTML}
+
+function highlight(text,query){if(!query||!text)return escapeHtml(text||'');try{const re=new RegExp('('+query.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi');return escapeHtml(text).replace(re,'<mark>$1</mark>')}catch{return escapeHtml(text)}}
+
+async function init(){
+    try{
+        const resp=await fetch('slides.json');
+        if(!resp.ok)throw new Error('HTTP '+resp.status);
+        STATE.slides=await resp.json();
+    }catch(e){
+        document.getElementById('loadStatus').textContent='載入失敗：'+e.message;
+        return;
+    }
+    const titles=new Set();
+    STATE.slides.forEach(s=>titles.add(s.doc_title));
+    STATE.docTitles=Array.from(titles).sort();
+    document.getElementById('loadStatus').textContent='資料載入完成！';
+    setTimeout(()=>{
+        document.getElementById('loader').classList.add('hide');
+        document.getElementById('app').classList.add('show');
+    },400);
+    renderStats();
+    renderOverview();
+    renderSearch();
+    renderBrowser();
+    renderCases();
+    renderAgents();
+    bindTabs();
+}
+
+function renderStats(){
+    const total=STATE.slides.length;
+    document.getElementById('stats').innerHTML=`
+        <div class="stat-card"><span class="stat-num">${total} 頁</span><span class="stat-label">知識庫投影片</span></div>
+        <div class="stat-card"><span class="stat-num">${STATE.docTitles.length} 份</span><span class="stat-label">技術簡報</span></div>
+        <div class="stat-card"><span class="stat-num">7 秒</span><span class="stat-label">極速警報時效</span></div>
+        <div class="stat-card"><span class="stat-num">25 km</span><span class="stat-label">預警盲區半徑</span></div>
+    `;
+}
+
+function renderOverview(){
+    const el=document.getElementById('tab-overview');
+    el.innerHTML=`
+        <div class="card">
+            <h3>臺灣地震速報的 AI 新紀元</h3>
+            <p>本專案整合了氣象署於 2025 至 2026 年最新發表的地震監控發展成果。從 1999 年集集大地震需要 <b>102 秒</b> 才能計算出地震報告，到 2024 年花蓮地震縮短至 <b>9-15 秒</b> 發布警報，氣象署在 2026 年正式邁向<b>「7 秒極速預警」</b>時代！預警盲區從半徑 35 公里縮減至 25 公里，極大地保護了都會區數百萬居民的安全。</p>
+            <p style="margin-top:10px">在次世代預警系統中，科學家引入了 <b>大型地震模型 (LEM) - SeisWav2Vec 2.0</b> 自監督預訓練模型，並採用神經網路預估震度。同時，專案規劃了由四個自定義 <b>AI 代理 (Agent Matrix)</b> 組成的協作閉環系統，達成全自動化 Earthworm 監控、事件繪圖、故障恢復與科研建模任務。</p>
+        </div>
+        <div class="card">
+            <h3>系統架構與知識網絡</h3>
+            <p style="margin-bottom:8px">本專案知識庫已自動提煉 ${STATE.docTitles.length} 份技術簡報，並將內嵌圖片資源自動抽取保存：</p>
+            <div class="doc-list">
+                ${STATE.docTitles.map(t=>`<div class="doc-item"><b>${escapeHtml(t)}</b> — ${STATE.slides.filter(s=>s.doc_title===t).length} 頁</div>`).join('')}
+            </div>
+        </div>
+        <div class="card">
+            <h3>AI 代理群協作矩陣 (Agent Matrix)</h3>
+            <p>專案引進了次世代的多代理協作系統，透過各具專長的 Agent 建立自動化的地震事件監控與科研回報閉環：</p>
+            <div style="overflow-x:auto;margin-top:10px">
+                <table style="width:100%;border-collapse:collapse;font-size:.85em">
+                    <thead><tr style="background:var(--primary-light);color:var(--primary-dark)}"><th style="padding:8px;text-align:left;border:1px solid #b2dfdb">代理角色</th><th style="padding:8px;text-align:left;border:1px solid #b2dfdb">核心技術定位</th></tr></thead>
+                    <tbody>
+                        <tr><td style="padding:8px;border:1px solid #e0e0e0"><b>my_agent</b> (預警總管)</td><td style="padding:8px;border:1px solid #e0e0e0">核心監控與發送端</td></tr>
+                        <tr><td style="padding:8px;border:1px solid #e0e0e0"><b>secondary_agent</b> (系統整合)</td><td style="padding:8px;border:1px solid #e0e0e0">跨節點調度與恢復</td></tr>
+                        <tr><td style="padding:8px;border:1px solid #e0e0e0"><b>seismo_agent</b> (地震學助教)</td><td style="padding:8px;border:1px solid #e0e0e0">數據處理與自動化繪圖</td></tr>
+                        <tr><td style="padding:8px;border:1px solid #e0e0e0"><b>seismo</b> (科學研究員)</td><td style="padding:8px;border:1px solid #e0e0e0">統計建模與科研預測</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+function renderSearch(){
+    const el=document.getElementById('tab-search');
+    el.innerHTML=`
+        <div class="card">
+            <h3>搜尋簡報內容與講者備忘錄</h3>
+            <p style="margin-bottom:12px">輸入關鍵字，即時檢索 ${STATE.slides.length} 頁投影片與講者備忘錄：</p>
+            <div class="search-bar">
+                <input id="searchInput" placeholder="輸入關鍵字 (例如: PWS, LEM, 幾何中心, 盲區, 誤報, 海嘯)..." onkeydown="if(event.key==='Enter') doSearch()">
+                <button onclick="doSearch()">搜尋</button>
+            </div>
+            <div class="tags">
+                ${['LEM','SeisWav2Vec','PWS','幾何中心','盲區','海嘯','誤報','深度學習','Grafana','Earthworm'].map(t=>`<span class="tag" onclick="searchTag('${t}')">${escapeHtml(t)}</span>`).join('')}
+            </div>
+            <div id="searchResults"><div class="empty-state">請輸入關鍵字開始搜尋，或點選上方熱門標籤。</div></div>
+        </div>
+    `;
+}
+
+function doSearch(){
+    const q=document.getElementById('searchInput').value.trim();
+    if(!q){document.getElementById('searchResults').innerHTML='<div class="empty-state">請輸入關鍵字。</div>';return}
+    const results=[];
+    STATE.slides.forEach(s=>{
+        const cMatch=s.content.toLowerCase().includes(q.toLowerCase());
+        const nMatch=s.notes.toLowerCase().includes(q.toLowerCase());
+        if(cMatch||nMatch)results.push(s);
+    });
+    const container=document.getElementById('searchResults');
+    if(!results.length){
+        container.innerHTML=`<div class="empty-state">未找到與 「<strong>${escapeHtml(q)}</strong>」 相關的內容。請更換關鍵字。</div>`;
+        return;
+    }
+    let html=`<div style="margin-bottom:8px;font-weight:600;color:var(--primary)">找到 ${results.length} 筆結果</div>`;
+    results.slice(0,30).forEach(r=>{
+        const contentHl=highlight(r.content,q);
+        const notesHl=highlight(r.notes,q);
+        html+=`
+        <div class="result-item">
+            <div class="title">${escapeHtml(r.doc_title)} <span class="page">第 ${r.slide_num} 頁</span></div>
+            <div class="content">${contentHl}</div>
+            ${r.notes?`<div class="notes"><b>備忘錄：</b>${notesHl}</div>`:''}
+            ${r.images&&r.images.length?`<div class="imgs">${r.images.slice(0,6).map(img=>`<img src="${img}" onclick="openLightbox('${img}')" loading="lazy">`).join('')}</div>`:''}
+        </div>`;
+    });
+    if(results.length>30)html+=`<div class="empty-state">* 顯示前 30 筆，請使用更精準的詞彙 *</div>`;
+    container.innerHTML=html;
+}
+
+function searchTag(t){
+    document.getElementById('searchInput').value=t;
+    doSearch();
+}
+
+function renderBrowser(){
+    const el=document.getElementById('tab-browser');
+    el.innerHTML=`
+        <div class="card">
+            <h3>線上逐頁閱讀技術簡報</h3>
+            <p style="margin-bottom:12px">選擇簡報檔案，瀏覽投影片內容與內嵌圖片：</p>
+            <div class="slide-nav">
+                <select id="docSelect" onchange="onDocChange()">
+                    ${STATE.docTitles.map((t,i)=>`<option value="${i}">${escapeHtml(t)}</option>`).join('')}
+                </select>
+                <button onclick="goSlide(-1)">◀ 上一頁</button>
+                <input type="number" id="slideNum" min="1" value="1" onchange="renderCurrentSlide()">
+                <span class="page-info" id="pageInfo">/ 1</span>
+                <button onclick="goSlide(1)">下一頁 ▶</button>
+            </div>
+            <div class="slide-display">
+                <div class="slide-text" id="slideContent"><h4>投影片內容</h4><p>請選擇簡報開始閱讀</p></div>
+                <div class="slide-text" id="slideNotes"><h4>講者備忘錄</h4><p>請選擇簡報開始閱讀</p></div>
+            </div>
+            <div id="slideImages"></div>
+        </div>
+    `;
+    if(STATE.docTitles.length)onDocChange();
+}
+
+function getDocSlides(idx){
+    const title=STATE.docTitles[idx];
+    return STATE.slides.filter(s=>s.doc_title===title).sort((a,b)=>a.slide_num-b.slide_num);
+}
+
+function onDocChange(){
+    const idx=parseInt(document.getElementById('docSelect').value);
+    const slides=getDocSlides(idx);
+    document.getElementById('slideNum').value=1;
+    document.getElementById('pageInfo').textContent='/ '+slides.length;
+    document.getElementById('slideNum').max=slides.length;
+    renderCurrentSlide();
+}
+
+function goSlide(dir){
+    const input=document.getElementById('slideNum');
+    let val=parseInt(input.value)+dir;
+    const max=parseInt(input.max);
+    if(val<1)val=1;
+    if(val>max)val=max;
+    input.value=val;
+    renderCurrentSlide();
+}
+
+function renderCurrentSlide(){
+    const idx=parseInt(document.getElementById('docSelect').value);
+    const slides=getDocSlides(idx);
+    const num=parseInt(document.getElementById('slideNum').value);
+    if(!slides.length)return;
+    const slide=slides[Math.min(Math.max(num,1),slides.length)-1];
+    document.getElementById('slideContent').innerHTML=`<h4>投影片內容 (第 ${slide.slide_num}/${slides.length} 頁)</h4><p>${escapeHtml(slide.content)}</p>`;
+    document.getElementById('slideNotes').innerHTML=`<h4>講者備忘錄</h4><p>${slide.notes?escapeHtml(slide.notes):'<em>此頁投影片無講者備忘錄資料</em>'}</p>`;
+    if(slide.images&&slide.images.length){
+        document.getElementById('slideImages').innerHTML=`
+            <div class="card">
+                <h4>投影片圖片 (${slide.images.length} 張)</h4>
+                <div class="slide-images">${slide.images.map(img=>`<img src="${img}" onclick="openLightbox('${img}')" loading="lazy">`).join('')}</div>
+            </div>`;
+    }else{
+        document.getElementById('slideImages').innerHTML='';
+    }
+}
+
+function renderCases(){
+    const el=document.getElementById('tab-cases');
+    const keys=Object.keys(casesData);
+    el.innerHTML=`
+        <div class="card">
+            <h3>歷史強震即時警報與效能模擬器</h3>
+            <p style="margin-bottom:12px">選擇歷史代表性地震，檢視定位精準度、發布時效與防災評估：</p>
+            <div class="radio-group">
+                ${keys.map((k,i)=>{
+                    const c=casesData[k];
+                    return `<label><input type="radio" name="caseRadio" value="${k}" ${i===0?'checked':''} onchange="showCase('${k}')"><span>${escapeHtml(c.title)}</span></label>`;
+                }).join('')}
+            </div>
+            <div id="caseDisplay">${showCaseHTML(keys[0])}</div>
+        </div>
+    `;
+}
+
+function showCase(id){
+    document.getElementById('caseDisplay').innerHTML=showCaseHTML(id);
+}
+
+function showCaseHTML(id){
+    const c=casesData[id];
+    if(!c)return'';
+    return`
+    <div class="case-card">
+        <h3>${escapeHtml(c.title)}</h3>
+        <div class="case-grid">
+            <div class="case-field"><span>地震規模 & 深度</span><strong>${escapeHtml(c.mag)} / 深度 ${escapeHtml(c.depth)}</strong></div>
+            <div class="case-field"><span>發震時間 & 震央</span><strong>${escapeHtml(c.time)} @ ${escapeHtml(c.epicenter)}</strong></div>
+        </div>
+        <span class="case-warn">⚡ 強震警報時效：${escapeHtml(c.warn)}</span>
+        <span class="case-zone">⚠️ 預警應變盲區：${escapeHtml(c.zone)}</span>
+        <div class="case-summary"><b>事件評估：</b>${escapeHtml(c.summary)}</div>
+        <div class="case-rating"><b>系統效能：</b>${escapeHtml(c.rating)}</div>
+    </div>`;
+}
+
+function renderAgents(){
+    const el=document.getElementById('tab-agents');
+    const keys=Object.keys(agentsData);
+    el.innerHTML=`
+        <div class="card">
+            <h3>氣象署次世代 EEW 多代理協作系統 (Agent Matrix)</h3>
+            <p style="margin-bottom:12px">選擇不同的 Agent，探索他們在 Earthworm 即時監控與故障恢復流程中的角色定位：</p>
+            <div class="radio-group">
+                ${keys.map((k,i)=>{
+                    const a=agentsData[k];
+                    return `<label><input type="radio" name="agentRadio" value="${k}" ${i===0?'checked':''} onchange="showAgent('${k}')"><span>${a.icon} ${escapeHtml(a.title)}</span></label>`;
+                }).join('')}
+            </div>
+            <div id="agentDisplay">${showAgentHTML(keys[0])}</div>
+        </div>
+    `;
+}
+
+function showAgent(id){
+    document.getElementById('agentDisplay').innerHTML=showAgentHTML(id);
+}
+
+function showAgentHTML(id){
+    const a=agentsData[id];
+    if(!a)return'';
+    const duties=a.duties.map(d=>`<li>${escapeHtml(d)}</li>`).join('');
+    return`
+    <div class="agent-card">
+        <h3>${a.icon} ${escapeHtml(a.title)} <span style="font-size:.75em;background:var(--primary-light);color:var(--primary);padding:2px 10px;border-radius:20px;font-weight:400">Agent ID: ${id}</span></h3>
+        <div class="agent-role">${escapeHtml(a.role)}</div>
+        <div class="agent-duties"><strong>核心職責與工作流：</strong><ul>${duties}</ul></div>
+        <div class="agent-cron"><span>自動化巡檢排程</span><code>${escapeHtml(a.cron)}</code></div>
+    </div>`;
+}
+
+function bindTabs(){
+    document.querySelectorAll('.tab-btn').forEach(btn=>{
+        btn.addEventListener('click',()=>{
+            document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+        });
+    });
+}
+
+function openLightbox(src){
+    document.getElementById('lightboxImg').src=src;
+    document.getElementById('lightbox').style.display='flex';
+}
+
+init();
+</script>
+</body>
+</html>
